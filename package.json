@@ -1,0 +1,25 @@
+{
+  "name": "kainet-scraper",
+  "version": "1.0.0",
+  "description": "YouTube Music scraper for Kainet Music",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "jest"
+  },
+  "author": "TheDavidDelta",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/TheDavidDelta/kainet-scraper.git"
+  },
+  "license": "GPL-3.0",
+  "bugs": {
+    "url": "https://github.com/TheDavidDelta/kainet-scraper/issues"
+  },
+  "homepage": "https://github.com/TheDavidDelta/kainet-scraper#readme",
+  "private": false,
+  "files": [
+    "dist/**/*"
+  ]
+}
