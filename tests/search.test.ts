@@ -89,7 +89,6 @@ describe("artists", () => {
     it("returns youtube artists with all data correctly", async () => {
         const results = await resFromQueries(getArtists);
         results.forEach(artistList => {
-            console.log(artistList)
             expect(artistList).not.toBeNull();
             artistList?.forEach(artist => (
                 Object.values(artist).forEach(val => (

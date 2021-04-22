@@ -20,7 +20,7 @@ type SongData = {
     musicResponsiveListItemRenderer?: {
         flexColumns?: FlexColumns,
         thumbnail?: Thumbnail,
-        playlistItemData?: PlaylistItemData,
+        playlistItemData?: PlaylistItemData
     }
 };
 
@@ -28,7 +28,7 @@ type VideoData = {
     musicResponsiveListItemRenderer?: {
         flexColumns?: FlexColumns,
         thumbnail?: Thumbnail,
-        playlistItemData?: PlaylistItemData,
+        playlistItemData?: PlaylistItemData
     }
 };
 
@@ -272,75 +272,55 @@ const parse = {
     })
 };
 
-export const getSongs = (query: string, lang?: string): Promise<Song[] | null> => (
-    client(
-        url,
-        {
-            params: "Eg-KAQwIARAAGAAgACgAMABqChAEEAUQAxAKEAk%3D",
-            query
-        },
-        lang
-    ).then(res =>
+export const getSongs = (query: string): Promise<Song[] | null> => (
+    client(url, {
+        params: "Eg-KAQwIARAAGAAgACgAMABqChAEEAUQAxAKEAk%3D",
+        query
+    }).then(res =>
         parseSearch<SongData>(res.data)?.map(parse.songs) ?? null
     ).catch(
         () => null
     )
 );
 
-export const getVideos = (query: string, lang?: string): Promise<Video[] | null> => (
-    client(
-        url,
-        {
-            params: "Eg-KAQwIABABGAAgACgAMABqChAEEAUQAxAKEAk%3D",
-            query
-        },
-        lang
-    ).then(res =>
+export const getVideos = (query: string): Promise<Video[] | null> => (
+    client(url, {
+        params: "Eg-KAQwIABABGAAgACgAMABqChAEEAUQAxAKEAk%3D",
+        query
+    }).then(res =>
         parseSearch<VideoData>(res.data)?.map(parse.videos) ?? null
     ).catch(
         () => null
     )
 );
 
-export const getAlbums = (query: string, lang?: string): Promise<Album[] | null> => (
-    client(
-        url,
-        {
-            params: "Eg-KAQwIABAAGAEgACgAMABqChAEEAUQAxAKEAk%3D",
-            query
-        },
-        lang
-    ).then(res =>
+export const getAlbums = (query: string): Promise<Album[] | null> => (
+    client(url, {
+        params: "Eg-KAQwIABAAGAEgACgAMABqChAEEAUQAxAKEAk%3D",
+        query
+    }).then(res =>
         parseSearch<AlbumData>(res.data)?.map(parse.albums) ?? null
     ).catch(
         () => null
     )
 );
 
-export const getPlaylists = (query: string, lang?: string): Promise<Playlist[] | null> => (
-    client(
-        url,
-        {
-            params: "Eg-KAQwIABAAGAAgACgBMABqChAEEAUQAxAKEAk%3D",
-            query
-        },
-        lang
-    ).then(res =>
+export const getPlaylists = (query: string): Promise<Playlist[] | null> => (
+    client(url, {
+        params: "Eg-KAQwIABAAGAAgACgBMABqChAEEAUQAxAKEAk%3D",
+        query
+    }).then(res =>
         parseSearch<PlaylistData>(res.data)?.map(parse.playlist) ?? null
     ).catch(
         () => null
     )
 );
 
-export const getArtists = (query: string, lang?: string): Promise<Artist[] | null> => (
-    client(
-        url,
-        {
-            params: "Eg-KAQwIABAAGAAgASgAMABqChAEEAUQAxAKEAk%3D",
-            query
-        },
-        lang
-    ).then(res =>
+export const getArtists = (query: string): Promise<Artist[] | null> => (
+    client(url, {
+        params: "Eg-KAQwIABAAGAAgASgAMABqChAEEAUQAxAKEAk%3D",
+        query
+    }).then(res =>
         parseSearch<ArtistData>(res.data)?.map(parse.artist) ?? null
     ).catch(
         () => null

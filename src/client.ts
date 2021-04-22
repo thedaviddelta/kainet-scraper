@@ -5,9 +5,8 @@ export default (
     url: string,
     data: {
         params: string,
-        query: string
-    },
-    lang?: string
+        query?: string
+    }
 ) => (
     axios.post(
         `https://music.youtube.com/youtubei/v1/${url}`,
@@ -22,7 +21,6 @@ export default (
         },
         {
             headers: {
-                "Accept-Language": lang ?? "en",
                 "User-Agent": new UserAgent().toString(),
                 Origin: "https://music.youtube.com",
                 Referer: "music.youtube.com"
