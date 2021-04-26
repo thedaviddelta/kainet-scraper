@@ -1,136 +1,69 @@
-import client from "./client";
+import client from "./utils/client";
+import * as parse from "./utils/parse";
+import {
+    Columns,
+    MenuSearch,
+    NavigationEndpoint,
+    Overlay,
+    PlaylistItemData,
+    Thumbnail
+} from "./utils/types";
 
-const url = "search?alt=json&key=AIzaSyC9XL3ZjWddXya6X74dJoCTL-WEYFDNX30";
+const endpoint = "search";
 
-type SearchData<T extends ResultData> = {
+const parseSearch = <T extends SearchResultData>(data: SearchData<T>) => (
+    data.contents?.sectionListRenderer?.contents?.[0]?.musicShelfRenderer?.contents?.map(el => el?.musicResponsiveListItemRenderer)
+);
+
+export type SearchData<T extends SearchResultData> = {
     contents?: {
         sectionListRenderer?: {
             contents?: {
                 musicShelfRenderer?: {
-                    contents?: T[]
+                    contents?: {
+                        musicResponsiveListItemRenderer: T
+                    }[]
                 }
             }[]
         }
     }
 };
 
-type ResultData = SongData | VideoData | AlbumData | PlaylistData;
+export type SearchResultData = SearchSongData | SearchVideoData | SearchAlbumData | SearchPlaylistData | SearchArtistData;
 
-type SongData = {
-    musicResponsiveListItemRenderer?: {
-        flexColumns?: FlexColumns,
-        thumbnail?: Thumbnail,
-        playlistItemData?: PlaylistItemData
-    }
+export type SearchSongData = {
+    flexColumns?: Columns<"Flex">,
+    thumbnail?: Thumbnail,
+    playlistItemData?: PlaylistItemData
 };
 
-type VideoData = {
-    musicResponsiveListItemRenderer?: {
-        flexColumns?: FlexColumns,
-        thumbnail?: Thumbnail,
-        playlistItemData?: PlaylistItemData
-    }
+export type SearchVideoData = {
+    flexColumns?: Columns<"Flex">,
+    thumbnail?: Thumbnail,
+    playlistItemData?: PlaylistItemData
 };
 
-type AlbumData = {
-    musicResponsiveListItemRenderer?: {
-        flexColumns?: FlexColumns,
-        thumbnail?: Thumbnail,
-        menu?: Menu,
-        overlay?: Overlay
-    }
+export type SearchPlaylistData = {
+    flexColumns?: Columns<"Flex">,
+    thumbnail?: Thumbnail,
+    menu?: MenuSearch,
+    overlay?: Overlay
+    navigationEndpoint?: NavigationEndpoint
 };
 
-type PlaylistData = {
-    musicResponsiveListItemRenderer?: {
-        flexColumns?: FlexColumns,
-        thumbnail?: Thumbnail,
-        menu?: Menu,
-        overlay?: Overlay
-    }
+export type SearchAlbumData = {
+    flexColumns?: Columns<"Flex">,
+    thumbnail?: Thumbnail,
+    menu?: MenuSearch,
+    overlay?: Overlay
+    navigationEndpoint?: NavigationEndpoint
 };
 
-type ArtistData = {
-    musicResponsiveListItemRenderer?: {
-        flexColumns?: FlexColumns,
-        thumbnail?: Thumbnail,
-        navigationEndpoint?: NavigationEndpoint
-    }
+export type SearchArtistData = {
+    flexColumns?: Columns<"Flex">,
+    thumbnail?: Thumbnail,
+    navigationEndpoint?: NavigationEndpoint
 };
-
-type FlexColumns = {
-    musicResponsiveListItemFlexColumnRenderer?: {
-        text?: {
-            runs?: {
-                text?: string,
-                navigationEndpoint?: {
-                    watchEndpoint?: {
-                        videoId?: string
-                    }
-                },
-                browseEndpoint?: {
-                    browseId?: string
-                }
-            }[]
-        }
-    }
-}[];
-
-type Thumbnail = {
-    musicThumbnailRenderer?: {
-        thumbnail?: {
-            thumbnails?: {
-                url?: string
-            }[]
-        }
-    }
-};
-
-type PlaylistItemData = {
-    videoId?: string
-};
-
-type Menu = {
-    menuRenderer?: {
-        items?: {
-            menuNavigationItemRenderer: {
-                toggleMenuServiceItemRenderer?: {
-                    toggledServiceEndpoint?: {
-                        likeEndpoint?: {
-                            target?: {
-                                playlistId?: string
-                            }
-                        }
-                    }
-                }
-            }
-        }[]
-    }
-};
-
-type Overlay = {
-    musicItemThumbnailOverlayRenderer?: {
-        content?: {
-            musicPlayButtonRenderer?: {
-                playNavigationEndpoint?: {
-                    watchPlaylistEndpoint?: {
-                        playlistId?: string
-                    }
-                }
-            }
-        }
-    }
-};
-
-type NavigationEndpoint = {
-    browseEndpoint?: {
-        browseId?: string
-    }
-};
-
-const parseSearch = <T extends ResultData>(data: SearchData<T>) => (
-    data.contents?.sectionListRenderer?.contents?.[0]?.musicShelfRenderer?.contents
-);
 
 interface Song {
     id?: string,
@@ -154,6 +87,7 @@ interface Video {
 
 interface Album {
     id?: string,
+    browseId?: string,
     title?: string,
     artist?: string,
     thumbnail?: (string|undefined)[],
@@ -162,6 +96,7 @@ interface Album {
 
 interface Playlist {
     id?: string,
+    browseId?: string,
     title?: string,
     thumbnail?: (string|undefined)[],
     songCount?: number
@@ -174,154 +109,109 @@ interface Artist {
     subCount?: bigint
 }
 
-const extract = {
-    text: (data: ResultData, colIndex: number, runIndex: number) => {
-        const cols = data.musicResponsiveListItemRenderer?.flexColumns;
-        const currCol = cols?.[colIndex >= 0 ? colIndex : cols.length + colIndex];
-        const runs = currCol?.musicResponsiveListItemFlexColumnRenderer?.text?.runs;
-        return runs?.[runIndex >= 0 ? runIndex : runs.length + runIndex]?.text;
-    },
-    thumbnails: (data: ResultData) => (
-        data.musicResponsiveListItemRenderer?.thumbnail?.musicThumbnailRenderer?.thumbnail?.thumbnails?.map(t => t.url)
+const parseId = {
+    songOrVideo: (data?: SearchSongData | SearchVideoData) => (
+        data?.playlistItemData?.videoId
+        ?? data?.flexColumns?.[0]?.musicResponsiveListItemFlexColumnRenderer?.text?.runs?.[0]?.navigationEndpoint?.watchEndpoint?.videoId
     ),
-    duration: (text?: string) => {
-        const parts = text?.split(":");
-        if (!parts || parts.length < 2 || parts.length > 3)
-            return undefined;
-        if (parts.length === 3) {
-            const [hours, mins, secs] = parts;
-            return +hours * 3600 + +mins * 60 + +secs;
-        }
-        const [mins, secs] = parts;
-        return +mins * 60 + +secs;
-    },
-    num: {
-        simple: (text?: string) => {
-            const num = text?.replace(/\D+/, "");
-            if (!num || Number.isNaN(+num))
-                return undefined;
-            return +num;
-        },
-        big: (text?: string) => {
-            const multipliers = {
-                "K": 1E3,
-                "M": 1E6,
-                "B": 1E9
-            } as {
-                [key: string]: number
-            };
-
-            const [, count, , multiplier] = text?.match(/([\d]+([.,][\d]+)?)\s?([KMBkmb])?/) ?? [];
-            if (!count || Number.isNaN(+count))
-                return undefined;
-            return BigInt(Math.round(+count * 100)) * BigInt(multipliers[multiplier] ?? 1) / 100n;
-        }
-    },
-    id: {
-        songOrVideo: (data: SongData | VideoData) => (
-            data.musicResponsiveListItemRenderer?.playlistItemData?.videoId
-            ?? data.musicResponsiveListItemRenderer?.flexColumns?.[0]?.musicResponsiveListItemFlexColumnRenderer?.text?.runs?.[0]?.navigationEndpoint?.watchEndpoint?.videoId
-        ),
-        albumOrPlaylist: (data: AlbumData | PlaylistData) => (
-            data.musicResponsiveListItemRenderer?.menu?.menuRenderer?.items?.[4]?.menuNavigationItemRenderer?.toggleMenuServiceItemRenderer?.toggledServiceEndpoint?.likeEndpoint?.target?.playlistId
-            ?? data.musicResponsiveListItemRenderer?.overlay?.musicItemThumbnailOverlayRenderer?.content?.musicPlayButtonRenderer?.playNavigationEndpoint?.watchPlaylistEndpoint?.playlistId
-        ),
-        artist: (data: ArtistData) => (
-            data.musicResponsiveListItemRenderer?.navigationEndpoint?.browseEndpoint?.browseId
-        )
-    }
+    albumOrPlaylist: (data?: SearchAlbumData | SearchPlaylistData) => (
+        data?.menu?.menuRenderer?.items?.[4]?.menuNavigationItemRenderer?.toggleMenuServiceItemRenderer?.toggledServiceEndpoint?.likeEndpoint?.target?.playlistId
+        ?? data?.overlay?.musicItemThumbnailOverlayRenderer?.content?.musicPlayButtonRenderer?.playNavigationEndpoint?.watchPlaylistEndpoint?.playlistId
+    )
 };
 
-const parse = {
-    songs: (data: SongData): Song => ({
-        id: extract.id.songOrVideo(data),
-        title: extract.text(data, 0, 0),
-        artist: extract.text(data, 1, 0),
-        album: extract.text(data, 1, -3),
-        duration: extract.duration(extract.text(data, 1, -1)),
-        durationText: extract.text(data, 1, -1),
-        thumbnail: extract.thumbnails(data),
+const scrape = {
+    songs: (data?: SearchSongData): Song => ({
+        id: parseId.songOrVideo(data),
+        title: parse.text(data?.flexColumns, 0, 0),
+        artist: parse.text(data?.flexColumns, 1, 0),
+        album: parse.text(data?.flexColumns, 1, -3),
+        duration: parse.duration.fromText(parse.text(data?.flexColumns, 1, -1)),
+        durationText: parse.text(data?.flexColumns, 1, -1),
+        thumbnail: parse.thumbnails(data?.thumbnail),
     }),
-    videos: (data: VideoData): Video => ({
-        id: extract.id.songOrVideo(data),
-        title: extract.text(data, 0, 0),
-        artist: extract.text(data, 1, 0),
-        duration: extract.duration(extract.text(data, 1, -1)),
-        durationText: extract.text(data, 1, -1),
-        thumbnail: extract.thumbnails(data),
-        views: extract.num.big(extract.text(data, 1, -3))
+    videos: (data?: SearchVideoData): Video => ({
+        id: parseId.songOrVideo(data),
+        title: parse.text(data?.flexColumns, 0, 0),
+        artist: parse.text(data?.flexColumns, 1, 0),
+        duration: parse.duration.fromText(parse.text(data?.flexColumns, 1, -1)),
+        durationText: parse.text(data?.flexColumns, 1, -1),
+        thumbnail: parse.thumbnails(data?.thumbnail),
+        views: parse.num.big(parse.text(data?.flexColumns, 1, -3))
     }),
-    albums: (data: AlbumData): Album => ({
-        id: extract.id.albumOrPlaylist(data),
-        title: extract.text(data, 0, 0),
-        artist: extract.text(data, 1, 2),
-        thumbnail: extract.thumbnails(data),
-        year: extract.text(data, 1, 4)
+    albums: (data?: SearchAlbumData): Album => ({
+        id: parseId.albumOrPlaylist(data),
+        browseId: parse.id.browse(data),
+        title: parse.text(data?.flexColumns, 0, 0),
+        artist: parse.text(data?.flexColumns, 1, 2),
+        thumbnail: parse.thumbnails(data?.thumbnail),
+        year: parse.text(data?.flexColumns, 1, -1)
     }),
-    playlist: (data: PlaylistData): Playlist => ({
-        id: extract.id.albumOrPlaylist(data),
-        title: extract.text(data, 0, 0),
-        thumbnail: extract.thumbnails(data),
-        songCount: extract.num.simple(extract.text(data, 1, 2))
+    playlist: (data?: SearchPlaylistData): Playlist => ({
+        id: parseId.albumOrPlaylist(data),
+        browseId: parse.id.browse(data),
+        title: parse.text(data?.flexColumns, 0, 0),
+        thumbnail: parse.thumbnails(data?.thumbnail),
+        songCount: parse.num.simple(parse.text(data?.flexColumns, 1, 2))
     }),
-    artist: (data: ArtistData): Artist => ({
-        id: extract.id.artist(data),
-        name: extract.text(data, 0, 0),
-        thumbnail: extract.thumbnails(data),
-        subCount: extract.num.big(extract.text(data, 1, 2))
+    artist: (data?: SearchArtistData): Artist => ({
+        id: parse.id.browse(data),
+        name: parse.text(data?.flexColumns, 0, 0),
+        thumbnail: parse.thumbnails(data?.thumbnail),
+        subCount: parse.num.big(parse.text(data?.flexColumns, 1, 2))
     })
 };
 
 export const getSongs = (query: string): Promise<Song[] | null> => (
-    client(url, {
+    client(endpoint, {
         params: "Eg-KAQwIARAAGAAgACgAMABqChAEEAUQAxAKEAk%3D",
         query
     }).then(res =>
-        parseSearch<SongData>(res.data)?.map(parse.songs) ?? null
+        parseSearch<SearchSongData>(res.data)?.map(scrape.songs) ?? null
     ).catch(
         () => null
     )
 );
 
 export const getVideos = (query: string): Promise<Video[] | null> => (
-    client(url, {
+    client(endpoint, {
         params: "Eg-KAQwIABABGAAgACgAMABqChAEEAUQAxAKEAk%3D",
         query
     }).then(res =>
-        parseSearch<VideoData>(res.data)?.map(parse.videos) ?? null
+        parseSearch<SearchVideoData>(res.data)?.map(scrape.videos) ?? null
     ).catch(
         () => null
     )
 );
 
 export const getAlbums = (query: string): Promise<Album[] | null> => (
-    client(url, {
+    client(endpoint, {
         params: "Eg-KAQwIABAAGAEgACgAMABqChAEEAUQAxAKEAk%3D",
         query
     }).then(res =>
-        parseSearch<AlbumData>(res.data)?.map(parse.albums) ?? null
+        parseSearch<SearchAlbumData>(res.data)?.map(scrape.albums) ?? null
     ).catch(
         () => null
     )
 );
 
 export const getPlaylists = (query: string): Promise<Playlist[] | null> => (
-    client(url, {
+    client(endpoint, {
         params: "Eg-KAQwIABAAGAAgACgBMABqChAEEAUQAxAKEAk%3D",
         query
     }).then(res =>
-        parseSearch<PlaylistData>(res.data)?.map(parse.playlist) ?? null
+        parseSearch<SearchPlaylistData>(res.data)?.map(scrape.playlist) ?? null
     ).catch(
         () => null
     )
 );
 
 export const getArtists = (query: string): Promise<Artist[] | null> => (
-    client(url, {
+    client(endpoint, {
         params: "Eg-KAQwIABAAGAAgASgAMABqChAEEAUQAxAKEAk%3D",
         query
     }).then(res =>
-        parseSearch<ArtistData>(res.data)?.map(parse.artist) ?? null
+        parseSearch<SearchArtistData>(res.data)?.map(scrape.artist) ?? null
     ).catch(
         () => null
     )

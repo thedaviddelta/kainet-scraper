@@ -2,14 +2,13 @@ import axios from "axios";
 import UserAgent from "user-agents";
 
 export default (
-    url: string,
-    data: {
-        params: string,
-        query?: string
+    endpoint: string,
+    data?: {
+        [key: string]: any
     }
 ) => (
     axios.post(
-        `https://music.youtube.com/youtubei/v1/${url}`,
+        `https://music.youtube.com/youtubei/v1/${endpoint}?alt=json&key=AIzaSyC9XL3ZjWddXya6X74dJoCTL-WEYFDNX30`,
         {
             context: {
                 client: {

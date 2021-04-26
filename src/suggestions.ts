@@ -1,15 +1,26 @@
-import client from "./client";
+import client from "./utils/client";
+import * as parse from "./utils/parse";
+import { MenuSuggestions, NavigationEndpoint, Thumbnail, Title } from "./utils/types";
 
-const url = "browse?alt=json&key=AIzaSyC9XL3ZjWddXya6X74dJoCTL-WEYFDNX30";
-
-type BrowseData = {
+type SuggestionsData = {
     contents?: {
         singleColumnBrowseResultsRenderer?: {
             tabs?: {
                 tabRenderer?: {
                     content?: {
                         sectionListRenderer?: {
-                            contents?: ResultData[]
+                            contents?: {
+                                [key in "musicCarouselShelfRenderer" | "musicImmersiveCarouselShelfRenderer"]?: {
+                                    contents?: {
+                                        musicTwoRowItemRenderer?: {
+                                            title?: Title,
+                                            menu?: MenuSuggestions,
+                                            thumbnailRenderer?: Thumbnail,
+                                            navigationEndpoint?: NavigationEndpoint
+                                        }
+                                    }[]
+                                }
+                            }[]
                         }
                     }
                 }
@@ -18,65 +29,29 @@ type BrowseData = {
     }
 };
 
-type ResultData = {
-    [key in "musicCarouselShelfRenderer" | "musicImmersiveCarouselShelfRenderer"]?: {
-        contents?: {
-            musicTwoRowItemRenderer?: {
-                title?: {
-                    runs: {
-                        text?: string
-                    }[]
-                },
-                menu?: {
-                    menuRenderer?: {
-                        items?: {
-                            toggleMenuServiceItemRenderer?: {
-                                toggledServiceEndpoint?: {
-                                    likeEndpoint?: {
-                                        target?: {
-                                            playlistId?: string
-                                        }
-                                    }
-                                }
-                            }
-                        }[]
-                    }
-                },
-                thumbnailRenderer?: {
-                    musicThumbnailRenderer?: {
-                        thumbnail?: {
-                            thumbnails?: {
-                                url?: string
-                            }[]
-                        }
-                    }
-                }
-            }
-        }[]
-    }
-};
-
 interface Playlist {
     id?: string,
+    browseId?: string,
     title?: string,
     thumbnail?: (string|undefined)[]
 }
 
-export const retrieve = (): Promise<Playlist[][] | null> => (
-    client(url, {
-        params: "Eg-KAQwIABAAGAEgACgAMABqChAEEAUQAxAKEAk%3D",
-    }).then(res => {
-        const data: BrowseData = res.data;
-        const results = data.contents?.singleColumnBrowseResultsRenderer?.tabs?.[0]?.tabRenderer?.content?.sectionListRenderer?.contents;
-        return results?.map(resultData => {
-            const carousel = resultData?.musicCarouselShelfRenderer ?? resultData?.musicImmersiveCarouselShelfRenderer;
-            return carousel?.contents?.map(item => ({
+const parseSuggestions = (data: SuggestionsData) => (
+    data?.contents?.singleColumnBrowseResultsRenderer?.tabs?.[0]?.tabRenderer?.content?.sectionListRenderer?.contents
+     ?.map(el => el?.musicCarouselShelfRenderer?.contents ?? el?.musicImmersiveCarouselShelfRenderer?.contents)
+);
+
+export const retrieve = (): Promise<Playlist[] | null> => (
+    client("browse").then(res =>
+        parseSuggestions(res.data)?.flatMap(row => (
+            row?.map(item => ({
                 id: item?.musicTwoRowItemRenderer?.menu?.menuRenderer?.items?.[4]?.toggleMenuServiceItemRenderer?.toggledServiceEndpoint?.likeEndpoint?.target?.playlistId,
+                browseId: parse.id.browse(item?.musicTwoRowItemRenderer),
                 title: item?.musicTwoRowItemRenderer?.title?.runs?.[0]?.text,
-                thumbnail: item?.musicTwoRowItemRenderer?.thumbnailRenderer?.musicThumbnailRenderer?.thumbnail?.thumbnails?.map(t => t.url)
-            }) as Playlist);
-        })?.filter(
-            (arr): arr is Playlist[] => !!arr
-        ) ?? null;
-    })
+                thumbnail: parse.thumbnails(item?.musicTwoRowItemRenderer?.thumbnailRenderer)
+            }) as Playlist)
+        ))?.filter(
+            (el): el is Playlist => !!el
+        ) ?? null
+    )
 );
