@@ -1,11 +1,6 @@
-import { retrieve } from "../src/suggestions";
+import { retrieveSuggestions } from "../src";
 
-it("returns suggested playlists with all data correctly", async () => {
-    const suggestions = await retrieve();
-    expect(suggestions).not.toBeNull();
-    suggestions?.forEach(suggestion =>
-        Object.values(suggestion).forEach(val => (
-            expect(val).toBeTruthy()
-        )
-    ));
-});
+it("returns suggested playlists with all data correctly", () => (
+    retrieveSuggestions()
+        .then(suggestions => expect(suggestions).not.toBeNull())
+));

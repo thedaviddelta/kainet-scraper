@@ -11,7 +11,7 @@ export const text = <T extends "Flex" | "Fixed">(data: Columns<T> | undefined, c
 };
 
 export const thumbnails = (data?: Thumbnail) => (
-    data?.musicThumbnailRenderer?.thumbnail?.thumbnails?.map(t => t.url)
+    data?.musicThumbnailRenderer?.thumbnail?.thumbnails?.map(t => t?.url)?.filter((url): url is string => !!url) ?? []
 );
 
 export const duration = {

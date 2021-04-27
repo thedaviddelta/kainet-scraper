@@ -1,16 +1,17 @@
-import { getSongs } from "../src/album";
+import { getSongsFromAlbum } from "../src";
+// @ts-ignore
+import { expectFromQueries, expectFromWrong } from "./testUtils";
 
-it("returns album songs with all data correctly", async () => {
-    const songs = await getSongs("MPREb_2mrJ3bwriqS");
-    expect(songs).not.toBeNull();
-    songs?.forEach(song => (
-        Object.values(song).forEach(val => (
-            expect(val).toBeTruthy()
-        ))
-    ));
-});
+const queries = [
+    "MPREb_2mrJ3bwriqS",
+    "MPREb_6MwY5ApCXas",
+    "MPREb_b3D2y9bdjNa"
+];
 
-it("returns null on no album result", async () => {
-    const songs = await getSongs("");
-    expect(songs).toBeNull();
-});
+it("returns album songs with all data correctly", () => (
+    expectFromQueries(queries, getSongsFromAlbum)
+));
+
+it("returns null on no album result", () => (
+    expectFromWrong(getSongsFromAlbum)
+));

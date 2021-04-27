@@ -1,5 +1,6 @@
-import client from "./utils/client";
+import request from "./utils/request";
 import * as parse from "./utils/parse";
+import { YtMusicSong } from "./utils/interfaces";
 import { MusicTrack } from "./utils/types";
 
 type AlbumData = {
@@ -14,29 +15,22 @@ type AlbumData = {
     }
 };
 
-interface Song {
-    id?: string,
-    title?: string,
-    artist?: string,
-    album?: string,
-    duration?: number,
-    durationText?: string,
-    thumbnail?: (string|undefined)[]
-}
-
 const parseAlbum = (data: AlbumData) => (
     data?.frameworkUpdates?.entityBatchUpdate?.mutations?.map(el => el?.payload?.musicTrack)
 );
 
-export const getSongs = (browseId: string): Promise<Song[] | null> => (
-    client("browse", { browseId }).then(res =>
-        parseAlbum(res.data)?.filter(Boolean)?.map(song => ({
-            id: song?.videoId,
-            title: song?.title,
-            artist: song?.artistNames,
-            duration: song?.lengthMs && Math.floor(song?.lengthMs / 1000),
-            durationText: parse.duration.toText(song?.lengthMs && Math.floor(song?.lengthMs / 1000)),
-            thumbnail: song?.thumbnailDetails?.thumbnails?.map(t => t?.url)
-        })) ?? null
-    )
+export const getSongsFromAlbum = (browseId: string): Promise<YtMusicSong[] | null> => (
+    request("browse").with({ browseId })
+        .then(res =>
+            parseAlbum(res.data)?.filter(Boolean)?.map(song => ({
+                id: song?.videoId!,
+                title: song?.title!,
+                artist: song?.artistNames,
+                duration: song?.lengthMs && Math.floor(song?.lengthMs / 1000),
+                durationText: parse.duration.toText(song?.lengthMs && Math.floor(song?.lengthMs / 1000)),
+                thumbnail: song?.thumbnailDetails?.thumbnails?.map(t => t?.url)?.filter((url): url is string => !!url) ?? []
+            })) ?? null
+        )?.catch(
+            () => null
+        )
 );

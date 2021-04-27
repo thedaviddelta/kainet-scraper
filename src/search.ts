@@ -1,5 +1,12 @@
-import client from "./utils/client";
+import request from "./utils/request";
 import * as parse from "./utils/parse";
+import {
+    YtMusicSong,
+    YtMusicVideo,
+    YtMusicAlbum,
+    YtMusicPlaylist,
+    YtMusicArtist
+} from "./utils/interfaces";
 import {
     Columns,
     MenuSearch,
@@ -9,13 +16,7 @@ import {
     Thumbnail
 } from "./utils/types";
 
-const endpoint = "search";
-
-const parseSearch = <T extends SearchResultData>(data: SearchData<T>) => (
-    data.contents?.sectionListRenderer?.contents?.[0]?.musicShelfRenderer?.contents?.map(el => el?.musicResponsiveListItemRenderer)
-);
-
-export type SearchData<T extends SearchResultData> = {
+type SearchData<T extends SearchResultData> = {
     contents?: {
         sectionListRenderer?: {
             contents?: {
@@ -29,21 +30,31 @@ export type SearchData<T extends SearchResultData> = {
     }
 };
 
-export type SearchResultData = SearchSongData | SearchVideoData | SearchAlbumData | SearchPlaylistData | SearchArtistData;
+type SearchResults = {
+    songs: SearchSongData,
+    videos: SearchVideoData,
+    albums: SearchAlbumData,
+    playlists: SearchPlaylistData,
+    artists: SearchArtistData
+};
 
-export type SearchSongData = {
+type SearchTypes = keyof SearchResults;
+
+type SearchResultData = SearchResults[SearchTypes];
+
+type SearchSongData = {
     flexColumns?: Columns<"Flex">,
     thumbnail?: Thumbnail,
     playlistItemData?: PlaylistItemData
 };
 
-export type SearchVideoData = {
+type SearchVideoData = {
     flexColumns?: Columns<"Flex">,
     thumbnail?: Thumbnail,
     playlistItemData?: PlaylistItemData
 };
 
-export type SearchPlaylistData = {
+type SearchPlaylistData = {
     flexColumns?: Columns<"Flex">,
     thumbnail?: Thumbnail,
     menu?: MenuSearch,
@@ -51,7 +62,7 @@ export type SearchPlaylistData = {
     navigationEndpoint?: NavigationEndpoint
 };
 
-export type SearchAlbumData = {
+type SearchAlbumData = {
     flexColumns?: Columns<"Flex">,
     thumbnail?: Thumbnail,
     menu?: MenuSearch,
@@ -59,55 +70,15 @@ export type SearchAlbumData = {
     navigationEndpoint?: NavigationEndpoint
 };
 
-export type SearchArtistData = {
+type SearchArtistData = {
     flexColumns?: Columns<"Flex">,
     thumbnail?: Thumbnail,
     navigationEndpoint?: NavigationEndpoint
 };
 
-interface Song {
-    id?: string,
-    title?: string,
-    artist?: string,
-    album?: string,
-    duration?: number,
-    durationText?: string,
-    thumbnail?: (string|undefined)[]
-}
-
-interface Video {
-    id?: string,
-    title?: string,
-    artist?: string,
-    duration?: number,
-    durationText?: string,
-    thumbnail?: (string|undefined)[],
-    views?: bigint
-}
-
-interface Album {
-    id?: string,
-    browseId?: string,
-    title?: string,
-    artist?: string,
-    thumbnail?: (string|undefined)[],
-    year?: string
-}
-
-interface Playlist {
-    id?: string,
-    browseId?: string,
-    title?: string,
-    thumbnail?: (string|undefined)[],
-    songCount?: number
-}
-
-interface Artist {
-    id?: string,
-    name?: string,
-    thumbnail?: (string|undefined)[],
-    subCount?: bigint
-}
+const parseSearch = <T extends SearchResultData>(data: SearchData<T>) => (
+    data.contents?.sectionListRenderer?.contents?.[0]?.musicShelfRenderer?.contents?.map(el => el?.musicResponsiveListItemRenderer)
+);
 
 const parseId = {
     songOrVideo: (data?: SearchSongData | SearchVideoData) => (
@@ -120,99 +91,88 @@ const parseId = {
     )
 };
 
-const scrape = {
-    songs: (data?: SearchSongData): Song => ({
-        id: parseId.songOrVideo(data),
-        title: parse.text(data?.flexColumns, 0, 0),
+const scrape: Record<
+    SearchTypes,
+    (data?: SearchResults[SearchTypes]) => SearchModels[SearchTypes]
+> = {
+    songs: (data?: SearchSongData): YtMusicSong => ({
+        id: parseId.songOrVideo(data)!,
+        title: parse.text(data?.flexColumns, 0, 0)!,
         artist: parse.text(data?.flexColumns, 1, 0),
         album: parse.text(data?.flexColumns, 1, -3),
         duration: parse.duration.fromText(parse.text(data?.flexColumns, 1, -1)),
         durationText: parse.text(data?.flexColumns, 1, -1),
         thumbnail: parse.thumbnails(data?.thumbnail),
     }),
-    videos: (data?: SearchVideoData): Video => ({
-        id: parseId.songOrVideo(data),
-        title: parse.text(data?.flexColumns, 0, 0),
+    videos: (data?: SearchVideoData): YtMusicVideo => ({
+        id: parseId.songOrVideo(data)!,
+        title: parse.text(data?.flexColumns, 0, 0)!,
         artist: parse.text(data?.flexColumns, 1, 0),
         duration: parse.duration.fromText(parse.text(data?.flexColumns, 1, -1)),
         durationText: parse.text(data?.flexColumns, 1, -1),
         thumbnail: parse.thumbnails(data?.thumbnail),
         views: parse.num.big(parse.text(data?.flexColumns, 1, -3))
     }),
-    albums: (data?: SearchAlbumData): Album => ({
-        id: parseId.albumOrPlaylist(data),
-        browseId: parse.id.browse(data),
-        title: parse.text(data?.flexColumns, 0, 0),
+    albums: (data?: SearchAlbumData): YtMusicAlbum => ({
+        id: parseId.albumOrPlaylist(data)!,
+        browseId: parse.id.browse(data)!,
+        title: parse.text(data?.flexColumns, 0, 0)!,
         artist: parse.text(data?.flexColumns, 1, 2),
         thumbnail: parse.thumbnails(data?.thumbnail),
         year: parse.text(data?.flexColumns, 1, -1)
     }),
-    playlist: (data?: SearchPlaylistData): Playlist => ({
-        id: parseId.albumOrPlaylist(data),
-        browseId: parse.id.browse(data),
-        title: parse.text(data?.flexColumns, 0, 0),
+    playlists: (data?: SearchPlaylistData): YtMusicPlaylist => ({
+        id: parseId.albumOrPlaylist(data)!,
+        browseId: parse.id.browse(data)!,
+        title: parse.text(data?.flexColumns, 0, 0)!,
         thumbnail: parse.thumbnails(data?.thumbnail),
         songCount: parse.num.simple(parse.text(data?.flexColumns, 1, 2))
     }),
-    artist: (data?: SearchArtistData): Artist => ({
-        id: parse.id.browse(data),
-        name: parse.text(data?.flexColumns, 0, 0),
+    artists: (data?: SearchArtistData): YtMusicArtist => ({
+        id: parse.id.browse(data)!,
+        name: parse.text(data?.flexColumns, 0, 0)!,
         thumbnail: parse.thumbnails(data?.thumbnail),
         subCount: parse.num.big(parse.text(data?.flexColumns, 1, 2))
     })
 };
 
-export const getSongs = (query: string): Promise<Song[] | null> => (
-    client(endpoint, {
-        params: "Eg-KAQwIARAAGAAgACgAMABqChAEEAUQAxAKEAk%3D",
-        query
-    }).then(res =>
-        parseSearch<SearchSongData>(res.data)?.map(scrape.songs) ?? null
-    ).catch(
-        () => null
-    )
-);
+type SearchModels = {
+    songs: YtMusicSong,
+    videos: YtMusicVideo,
+    albums: YtMusicAlbum,
+    playlists: YtMusicPlaylist,
+    artists: YtMusicArtist
+};
 
-export const getVideos = (query: string): Promise<Video[] | null> => (
-    client(endpoint, {
-        params: "Eg-KAQwIABABGAAgACgAMABqChAEEAUQAxAKEAk%3D",
-        query
-    }).then(res =>
-        parseSearch<SearchVideoData>(res.data)?.map(scrape.videos) ?? null
-    ).catch(
-        () => null
-    )
-);
+const searchParams: Record<
+    SearchTypes,
+    string
+> = {
+    songs: "Eg-KAQwIARAAGAAgACgAMABqChAEEAUQAxAKEAk%3D",
+    videos: "Eg-KAQwIABABGAAgACgAMABqChAEEAUQAxAKEAk%3D",
+    albums: "Eg-KAQwIABAAGAEgACgAMABqChAEEAUQAxAKEAk%3D",
+    playlists: "Eg-KAQwIABAAGAAgACgBMABqChAEEAUQAxAKEAk%3D",
+    artists: "Eg-KAQwIABAAGAAgASgAMABqChAEEAUQAxAKEAk%3D"
+};
 
-export const getAlbums = (query: string): Promise<Album[] | null> => (
-    client(endpoint, {
-        params: "Eg-KAQwIABAAGAEgACgAMABqChAEEAUQAxAKEAk%3D",
-        query
-    }).then(res =>
-        parseSearch<SearchAlbumData>(res.data)?.map(scrape.albums) ?? null
-    ).catch(
-        () => null
-    )
-);
+export const SearchType: Record<
+    Uppercase<SearchTypes>,
+    SearchTypes
+> = {
+    SONGS: "songs",
+    VIDEOS: "videos",
+    ALBUMS: "albums",
+    PLAYLISTS: "playlists",
+    ARTISTS: "artists"
+};
 
-export const getPlaylists = (query: string): Promise<Playlist[] | null> => (
-    client(endpoint, {
-        params: "Eg-KAQwIABAAGAAgACgBMABqChAEEAUQAxAKEAk%3D",
-        query
-    }).then(res =>
-        parseSearch<SearchPlaylistData>(res.data)?.map(scrape.playlist) ?? null
-    ).catch(
-        () => null
-    )
-);
-
-export const getArtists = (query: string): Promise<Artist[] | null> => (
-    client(endpoint, {
-        params: "Eg-KAQwIABAAGAAgASgAMABqChAEEAUQAxAKEAk%3D",
-        query
-    }).then(res =>
-        parseSearch<SearchArtistData>(res.data)?.map(scrape.artist) ?? null
-    ).catch(
-        () => null
-    )
+export const search = <T extends SearchTypes>(type: T, query: string) => (
+    request("search").with({ params: searchParams[type], query })
+        .then(res =>
+            parseSearch<SearchResults[T]>(res.data)?.map(
+                el => scrape[type](el) as SearchModels[T]
+            ) ?? null
+        ).catch(
+            () => null
+        )
 );
