@@ -166,6 +166,12 @@ export const SearchType: Record<
     ARTISTS: "artists"
 };
 
+/**
+ * Retrieves a list of search results based on the queried type and the query text
+ * @param type - The type of item to search, as listed in {@link SearchType}
+ * @param query - The text to query for
+ * @returns An array of of elements of the specified type, or null if something went wrong
+ */
 export const search = <T extends SearchTypes>(type: T, query: string) => (
     request("search").with({ params: searchParams[type], query })
         .then(res =>

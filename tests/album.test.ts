@@ -3,8 +3,8 @@ import { getSongsFromAlbum } from "../src";
 import { expectFromQueries, expectFromWrong } from "./testUtils";
 
 const queries = [
-    "MPREb_2mrJ3bwriqS",
     "MPREb_6MwY5ApCXas",
+    "MPREb_teWeMEZeVOQ",
     "MPREb_b3D2y9bdjNa"
 ];
 

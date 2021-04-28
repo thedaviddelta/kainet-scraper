@@ -1,4 +1,4 @@
-import { getSongsFromPlaylist } from "../src";
+import { getMusicFromPlaylist } from "../src";
 // @ts-ignore
 import { expectFromQueries, expectFromWrong } from "./testUtils";
 
@@ -9,9 +9,9 @@ const queries = [
 ];
 
 it("returns playlist songs with all data correctly", () => (
-    expectFromQueries(queries, getSongsFromPlaylist)
+    expectFromQueries(queries, getMusicFromPlaylist)
 ));
 
 it("returns null on no playlist result", () => (
-    expectFromWrong(getSongsFromPlaylist)
+    expectFromWrong(getMusicFromPlaylist)
 ));

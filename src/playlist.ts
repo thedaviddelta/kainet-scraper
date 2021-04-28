@@ -34,7 +34,12 @@ const parsePlaylist = (data: PlaylistData) => (
      ?.contents?.[0]?.musicPlaylistShelfRenderer?.contents?.map(el => el?.musicResponsiveListItemRenderer)
 );
 
-export const getSongsFromPlaylist = (browseId: string): Promise<(YtMusicSong & YtMusicVideo)[] | null> => (
+/**
+ * Retrieves the music contained in a YTMusic playlist
+ * @param browseId - The internal YTMusic ID for the playlist, as obtained in the search
+ * @returns An array of both YTMusic songs & videos, depending on the found item, or null if something went wrong
+ */
+export const getMusicFromPlaylist = (browseId: string): Promise<(YtMusicSong & YtMusicVideo)[] | null> => (
     request("browse").with({ browseId })
         .then(res =>
             parsePlaylist(res.data)?.map(song => ({
@@ -46,7 +51,7 @@ export const getSongsFromPlaylist = (browseId: string): Promise<(YtMusicSong & Y
                 durationText: parse.text(song?.fixedColumns, 0, 0, "Fixed"),
                 thumbnail: parse.thumbnails(song?.thumbnail)
             })) ?? null
-        )?.catch(
+        ).catch(
             () => null
         )
 );

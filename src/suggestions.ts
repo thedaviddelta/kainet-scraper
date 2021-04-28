@@ -40,6 +40,10 @@ const parseSuggestions = (data: SuggestionsData) => (
      ?.map(el => el?.musicCarouselShelfRenderer?.contents ?? el?.musicImmersiveCarouselShelfRenderer?.contents)
 );
 
+/**
+ * Retrieves a list of suggested playlist, as on the YTMusic homepage
+ * @returns An array of playlists, or null if something went wrong
+ */
 export const retrieveSuggestions = (): Promise<YtMusicPlaylist[] | null> => (
     request("browse").with()
         .then(res =>
@@ -53,7 +57,7 @@ export const retrieveSuggestions = (): Promise<YtMusicPlaylist[] | null> => (
             ))?.filter(
                 (el): el is YtMusicPlaylist => !!el
             ) ?? null
-        )?.catch(
+        ).catch(
             () => null
         )
 );

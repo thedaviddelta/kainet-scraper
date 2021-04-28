@@ -1,14 +1,14 @@
-export const expectFromQueries = async (
+export const expectFromQueries = (
     queries: string[],
     callback: (text: string) => Promise<any>
-): Promise<void> => {
+): Promise<void> => (
     Promise.all(queries.map(callback))
         .then(results =>
             results.forEach(result =>
                 expect(result).not.toBeNull()
             )
         )
-};
+);
 
 export const expectFromWrong = async (
     callback: (text: string) => Promise<any>

@@ -19,6 +19,11 @@ const parseAlbum = (data: AlbumData) => (
     data?.frameworkUpdates?.entityBatchUpdate?.mutations?.map(el => el?.payload?.musicTrack)
 );
 
+/**
+ * Retrieves the songs contained in a YTMusic album
+ * @param browseId - The internal YTMusic ID for the album, as obtained in the search
+ * @returns An array of the songs found in the album, or null if something went wrong
+ */
 export const getSongsFromAlbum = (browseId: string): Promise<YtMusicSong[] | null> => (
     request("browse").with({ browseId })
         .then(res =>
@@ -30,7 +35,7 @@ export const getSongsFromAlbum = (browseId: string): Promise<YtMusicSong[] | nul
                 durationText: parse.duration.toText(song?.lengthMs && Math.floor(song?.lengthMs / 1000)),
                 thumbnail: song?.thumbnailDetails?.thumbnails?.map(t => t?.url)?.filter((url): url is string => !!url) ?? []
             })) ?? null
-        )?.catch(
+        ).catch(
             () => null
         )
 );

@@ -19,6 +19,15 @@
   },
   "homepage": "https://github.com/TheDavidDelta/kainet-scraper#readme",
   "private": false,
+  "keywords": [
+    "kainet",
+    "youtube",
+    "music",
+    "api",
+    "scraping",
+    "scraper",
+    "extractor"
+  ],
   "files": [
     "dist/**/*"
   ],
@@ -31,6 +40,7 @@
   },
   "dependencies": {
     "axios": "^0.21.1",
+    "axios-retry": "^3.1.9",
     "user-agents": "^1.0.622"
   }
 }
