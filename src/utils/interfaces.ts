@@ -5,7 +5,7 @@ export interface YtMusicSong {
     album?: string,
     duration?: number,
     durationText?: string,
-    thumbnail: string[]
+    thumbnails: string[]
 }
 
 export interface YtMusicVideo {
@@ -14,7 +14,7 @@ export interface YtMusicVideo {
     artist?: string,
     duration?: number,
     durationText?: string,
-    thumbnail: string[],
+    thumbnails: string[],
     views?: bigint
 }
 
@@ -23,21 +23,23 @@ export interface YtMusicAlbum {
     browseId: string,
     title: string,
     artist?: string,
-    thumbnail: string[],
-    year?: string
+    thumbnails: string[],
+    year?: string,
+    songs?: YtMusicSong[]
 }
 
 export interface YtMusicPlaylist {
     id: string,
     browseId: string,
     title: string,
-    thumbnail: string[],
-    songCount?: number
+    thumbnails: string[],
+    songCount?: number,
+    songs?: (YtMusicSong & YtMusicVideo)[]
 }
 
 export interface YtMusicArtist {
     id: string,
     name: string,
-    thumbnail: string[],
+    thumbnails: string[],
     subCount?: bigint
 }

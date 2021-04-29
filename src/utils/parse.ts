@@ -1,17 +1,24 @@
 import {
     Columns,
     NavigationEndpoint,
-    Thumbnail
+    ThumbnailCommon,
+    Header
 } from "./types";
 
-export const text = <T extends "Flex" | "Fixed">(data: Columns<T> | undefined, colIndex: number, runIndex: number, type: T = "Flex" as T) => {
-    const currCol = data?.[colIndex >= 0 ? colIndex : data.length + colIndex];
-    const runs = currCol?.[`musicResponsiveListItem${type}ColumnRenderer` as const]?.text?.runs;
-    return runs?.[runIndex >= 0 ? runIndex : runs.length + runIndex]?.text;
+export const text = {
+    columns: <T extends "Flex" | "Fixed">(cols: Columns<T> | undefined, colIndex: number, runIndex: number, type: T = "Flex" as T) => {
+        const currCol = cols?.[colIndex >= 0 ? colIndex : cols.length + colIndex];
+        const runs = currCol?.[`musicResponsiveListItem${type}ColumnRenderer` as const]?.text?.runs;
+        return runs?.[runIndex >= 0 ? runIndex : runs.length + runIndex]?.text;
+    },
+    header: (header: Header | undefined, runIndex: number, type: "title" | "subtitle" | "secondSubtitle" = "title") => {
+        const runs = header?.musicDetailHeaderRenderer?.[type]?.runs;
+        return runs?.[runIndex >= 0 ? runIndex : runs?.length + runIndex]?.text;
+    }
 };
 
-export const thumbnails = (data?: Thumbnail) => (
-    data?.musicThumbnailRenderer?.thumbnail?.thumbnails?.map(t => t?.url)?.filter((url): url is string => !!url) ?? []
+export const thumbnails = (data?: ThumbnailCommon) => (
+    data?.thumbnails?.map(t => t?.url)?.filter((url): url is string => !!url) ?? []
 );
 
 export const duration = {

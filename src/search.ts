@@ -13,7 +13,7 @@ import {
     NavigationEndpoint,
     Overlay,
     PlaylistItemData,
-    Thumbnail
+    ThumbnailSearch
 } from "./utils/types";
 
 type SearchData<T extends SearchResultData> = {
@@ -38,25 +38,23 @@ type SearchResults = {
     artists: SearchArtistData
 };
 
-type SearchTypes = keyof SearchResults;
-
-type SearchResultData = SearchResults[SearchTypes];
+type SearchResultData = SearchResults[keyof SearchResults];
 
 type SearchSongData = {
     flexColumns?: Columns<"Flex">,
-    thumbnail?: Thumbnail,
+    thumbnail?: ThumbnailSearch,
     playlistItemData?: PlaylistItemData
 };
 
 type SearchVideoData = {
     flexColumns?: Columns<"Flex">,
-    thumbnail?: Thumbnail,
+    thumbnail?: ThumbnailSearch,
     playlistItemData?: PlaylistItemData
 };
 
 type SearchPlaylistData = {
     flexColumns?: Columns<"Flex">,
-    thumbnail?: Thumbnail,
+    thumbnail?: ThumbnailSearch,
     menu?: MenuSearch,
     overlay?: Overlay
     navigationEndpoint?: NavigationEndpoint
@@ -64,7 +62,7 @@ type SearchPlaylistData = {
 
 type SearchAlbumData = {
     flexColumns?: Columns<"Flex">,
-    thumbnail?: Thumbnail,
+    thumbnail?: ThumbnailSearch,
     menu?: MenuSearch,
     overlay?: Overlay
     navigationEndpoint?: NavigationEndpoint
@@ -72,7 +70,7 @@ type SearchAlbumData = {
 
 type SearchArtistData = {
     flexColumns?: Columns<"Flex">,
-    thumbnail?: Thumbnail,
+    thumbnail?: ThumbnailSearch,
     navigationEndpoint?: NavigationEndpoint
 };
 
@@ -97,42 +95,42 @@ const scrape: Record<
 > = {
     songs: (data?: SearchSongData): YtMusicSong => ({
         id: parseId.songOrVideo(data)!,
-        title: parse.text(data?.flexColumns, 0, 0)!,
-        artist: parse.text(data?.flexColumns, 1, 0),
-        album: parse.text(data?.flexColumns, 1, -3),
-        duration: parse.duration.fromText(parse.text(data?.flexColumns, 1, -1)),
-        durationText: parse.text(data?.flexColumns, 1, -1),
-        thumbnail: parse.thumbnails(data?.thumbnail),
+        title: parse.text.columns(data?.flexColumns, 0, 0)!,
+        artist: parse.text.columns(data?.flexColumns, 1, 0),
+        album: parse.text.columns(data?.flexColumns, 1, -3),
+        duration: parse.duration.fromText(parse.text.columns(data?.flexColumns, 1, -1)),
+        durationText: parse.text.columns(data?.flexColumns, 1, -1),
+        thumbnails: parse.thumbnails(data?.thumbnail?.musicThumbnailRenderer?.thumbnail),
     }),
     videos: (data?: SearchVideoData): YtMusicVideo => ({
         id: parseId.songOrVideo(data)!,
-        title: parse.text(data?.flexColumns, 0, 0)!,
-        artist: parse.text(data?.flexColumns, 1, 0),
-        duration: parse.duration.fromText(parse.text(data?.flexColumns, 1, -1)),
-        durationText: parse.text(data?.flexColumns, 1, -1),
-        thumbnail: parse.thumbnails(data?.thumbnail),
-        views: parse.num.big(parse.text(data?.flexColumns, 1, -3))
+        title: parse.text.columns(data?.flexColumns, 0, 0)!,
+        artist: parse.text.columns(data?.flexColumns, 1, 0),
+        duration: parse.duration.fromText(parse.text.columns(data?.flexColumns, 1, -1)),
+        durationText: parse.text.columns(data?.flexColumns, 1, -1),
+        thumbnails: parse.thumbnails(data?.thumbnail?.musicThumbnailRenderer?.thumbnail),
+        views: parse.num.big(parse.text.columns(data?.flexColumns, 1, -3))
     }),
     albums: (data?: SearchAlbumData): YtMusicAlbum => ({
         id: parseId.albumOrPlaylist(data)!,
         browseId: parse.id.browse(data)!,
-        title: parse.text(data?.flexColumns, 0, 0)!,
-        artist: parse.text(data?.flexColumns, 1, 2),
-        thumbnail: parse.thumbnails(data?.thumbnail),
-        year: parse.text(data?.flexColumns, 1, -1)
+        title: parse.text.columns(data?.flexColumns, 0, 0)!,
+        artist: parse.text.columns(data?.flexColumns, 1, 2),
+        thumbnails: parse.thumbnails(data?.thumbnail?.musicThumbnailRenderer?.thumbnail),
+        year: parse.text.columns(data?.flexColumns, 1, -1),
     }),
     playlists: (data?: SearchPlaylistData): YtMusicPlaylist => ({
         id: parseId.albumOrPlaylist(data)!,
         browseId: parse.id.browse(data)!,
-        title: parse.text(data?.flexColumns, 0, 0)!,
-        thumbnail: parse.thumbnails(data?.thumbnail),
-        songCount: parse.num.simple(parse.text(data?.flexColumns, 1, 2))
+        title: parse.text.columns(data?.flexColumns, 0, 0)!,
+        thumbnails: parse.thumbnails(data?.thumbnail?.musicThumbnailRenderer?.thumbnail),
+        songCount: parse.num.simple(parse.text.columns(data?.flexColumns, 1, 2)),
     }),
     artists: (data?: SearchArtistData): YtMusicArtist => ({
         id: parse.id.browse(data)!,
-        name: parse.text(data?.flexColumns, 0, 0)!,
-        thumbnail: parse.thumbnails(data?.thumbnail),
-        subCount: parse.num.big(parse.text(data?.flexColumns, 1, 2))
+        name: parse.text.columns(data?.flexColumns, 0, 0)!,
+        thumbnails: parse.thumbnails(data?.thumbnail?.musicThumbnailRenderer?.thumbnail),
+        subCount: parse.num.big(parse.text.columns(data?.flexColumns, 1, 2))
     })
 };
 
@@ -155,16 +153,15 @@ const searchParams: Record<
     artists: "Eg-KAQwIABAAGAAgASgAMABqChAEEAUQAxAKEAk%3D"
 };
 
-export const SearchType: Record<
-    Uppercase<SearchTypes>,
-    SearchTypes
-> = {
+export const SearchType = {
     SONGS: "songs",
     VIDEOS: "videos",
     ALBUMS: "albums",
     PLAYLISTS: "playlists",
     ARTISTS: "artists"
-};
+} as const;
+
+export type SearchTypes = typeof SearchType[keyof typeof SearchType];
 
 /**
  * Retrieves a list of search results based on the queried type and the query text
