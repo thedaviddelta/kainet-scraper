@@ -9,59 +9,61 @@ const queries = [
 ];
 
 const expectFromType = (type: typeof SearchType[keyof typeof SearchType]): Promise<void> => (
-    expectFromQueries(queries, text => search(type, text))
+    expectFromQueries(queries, text => search(type, text), result => (
+        expect(result).not.toStrictEqual([])
+    ))
 );
 
 const expectWrongFromType = (type: typeof SearchType[keyof typeof SearchType]): Promise<void> => (
-    expectFromWrong(text => search(type, text))
+    expectFromWrong(text => search(type, text), [])
 );
 
 describe("songs", () => {
-    it("returns youtube songs with all data correctly", () => (
+    it("returns youtube songs correctly", () => (
         expectFromType(SearchType.SONGS)
     ));
 
-    it("returns null on no songs results", () => (
+    it("returns empty array on no songs results", () => (
         expectWrongFromType(SearchType.SONGS)
     ));
 });
 
 describe("videos", () => {
-    it("returns youtube videos with all data correctly", () => (
+    it("returns youtube videos correctly", () => (
         expectFromType(SearchType.VIDEOS)
     ));
 
-    it("returns null on no videos results", () => (
+    it("returns empty array on no videos results", () => (
         expectWrongFromType(SearchType.VIDEOS)
     ));
 });
 
 describe("albums", () => {
-    it("returns youtube albums with all data correctly", () => (
+    it("returns youtube albums correctly", () => (
         expectFromType(SearchType.ALBUMS)
     ));
 
-    it("returns null on no albums results", () => (
+    it("returns empty array on no albums results", () => (
         expectWrongFromType(SearchType.ALBUMS)
     ));
 });
 
 describe("playlists", () => {
-    it("returns youtube playlists with all data correctly", () => (
+    it("returns youtube playlists correctly", () => (
         expectFromType(SearchType.PLAYLISTS)
     ));
 
-    it("returns null on no playlists results", () => (
+    it("returns empty array on no playlists results", () => (
         expectWrongFromType(SearchType.PLAYLISTS)
     ));
 });
 
 describe("artists", () => {
-    it("returns youtube artists with all data correctly", () => (
+    it("returns youtube artists correctly", () => (
         expectFromType(SearchType.ARTISTS)
     ));
 
-    it("returns null on no artists results", () => (
+    it("returns empty array on no artists results", () => (
         expectWrongFromType(SearchType.ARTISTS)
     ));
 });

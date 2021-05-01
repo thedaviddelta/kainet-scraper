@@ -1,5 +1,6 @@
 import request from "./utils/request";
 import * as parse from "./utils/parse";
+import * as filter from "./utils/filter";
 import { YtMusicPlaylist } from "./utils/interfaces";
 import { MusicTwoRowItemRenderer } from "./utils/types";
 
@@ -25,7 +26,7 @@ type SuggestionsData = {
     }
 };
 
-const parseSuggestions = (data: SuggestionsData) => (
+const parseSuggestions = (data?: SuggestionsData) => (
     data?.contents?.singleColumnBrowseResultsRenderer?.tabs?.[0]?.tabRenderer?.content?.sectionListRenderer?.contents
      ?.map(el => el?.musicCarouselShelfRenderer?.contents ?? el?.musicImmersiveCarouselShelfRenderer?.contents)
 );
@@ -39,17 +40,17 @@ const scrapePlaylist = (item?: { musicTwoRowItemRenderer?: MusicTwoRowItemRender
 
 /**
  * Retrieves a list of suggested playlist, as on the YTMusic homepage
- * @returns An array of playlists, or null if something went wrong
+ * @returns An array of playlists
  */
-export const retrieveSuggestions = (): Promise<YtMusicPlaylist[] | null> => (
+export const retrieveSuggestions = (): Promise<YtMusicPlaylist[]> => (
     request("browse").with()
         .then(res =>
             parseSuggestions(res.data)?.flatMap(row => (
                 row?.map(scrapePlaylist)
-            ))?.filter(
-                (el): el is YtMusicPlaylist => !!el
-            ) ?? null
+            ))?.filter((list): list is YtMusicPlaylist =>
+                !!list && filter.playlists(list)
+            ) ?? []
         ).catch(
-            () => null
+            () => []
         )
 );

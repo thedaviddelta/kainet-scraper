@@ -8,8 +8,11 @@ const queries = [
     "VLPL5eNRayL5QIRiH9BR6dku6886u_LJmpth"
 ];
 
-it("returns playlist item with all data correctly", () => (
-    expectFromQueries(queries, getPlaylist)
+it("returns playlist item with a songs array correctly", () => (
+    expectFromQueries(queries, getPlaylist, playlist => {
+        expect(playlist).not.toBeNull();
+        expect(playlist?.songs).not.toStrictEqual([]);
+    })
 ));
 
 it("returns null on no playlist result", () => (

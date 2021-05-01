@@ -15,7 +15,7 @@ export interface YtMusicVideo {
     duration?: number,
     durationText?: string,
     thumbnails: string[],
-    views?: bigint
+    views?: string // bigint is not serializable
 }
 
 export interface YtMusicAlbum {
@@ -41,5 +41,5 @@ export interface YtMusicArtist {
     id: string,
     name: string,
     thumbnails: string[],
-    subCount?: bigint
+    subCount?: string // bigint is not serializable
 }

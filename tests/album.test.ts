@@ -8,8 +8,11 @@ const queries = [
     "MPREb_b3D2y9bdjNa"
 ];
 
-it("returns album item with all data correctly", () => (
-    expectFromQueries(queries, getAlbum)
+it("returns album item with a songs array correctly", () => (
+    expectFromQueries(queries, getAlbum, album => {
+        expect(album).not.toBeNull();
+        expect(album?.songs).not.toStrictEqual([]);
+    })
 ));
 
 it("returns null on no album result", () => (

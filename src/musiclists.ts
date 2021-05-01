@@ -1,5 +1,6 @@
 import request from "./utils/request";
 import * as parse from "./utils/parse";
+import * as filter from "./utils/filter";
 import {
     YtMusicAlbum,
     YtMusicPlaylist,
@@ -76,7 +77,7 @@ const scrape = {
         title: parse.text.header(data?.header, 0)!,
         thumbnails: parse.thumbnails(data?.header?.musicDetailHeaderRenderer?.thumbnail?.croppedSquareThumbnailRenderer?.thumbnail),
         songCount: parse.num.simple(parse.text.header(data?.header, 0, "secondSubtitle")),
-        songs: parsePlaylist.songs(data)
+        songs: parsePlaylist.songs(data).filter(filter.songs)
     }),
     playlistSong: (song?: MusicResponsiveListItemRenderer): YtMusicSong & YtMusicVideo => ({
         id: song?.flexColumns?.[0]?.musicResponsiveListItemFlexColumnRenderer?.text?.runs?.[0]?.navigationEndpoint?.watchEndpoint?.videoId!,
@@ -96,7 +97,7 @@ const scrape = {
             thumbnails: parse.thumbnails(info.thumbnailDetails),
             artist: info.artistDisplayName,
             year: info.releaseDate?.year?.toString(),
-            songs: parseAlbum.songs(data)
+            songs: parseAlbum.songs(data).filter(filter.songs)
         };
     },
     albumAsPlaylist: (data: PlaylistData | undefined, browseId: string): YtMusicAlbum => ({
@@ -106,7 +107,7 @@ const scrape = {
         thumbnails: parse.thumbnails(data?.header?.musicDetailHeaderRenderer?.thumbnail?.croppedSquareThumbnailRenderer?.thumbnail),
         artist: parse.text.header(data?.header, 2, "subtitle"),
         year: parse.text.header(data?.header, -1, "subtitle"),
-        songs: parsePlaylist.songs(data)
+        songs: parsePlaylist.songs(data).filter(filter.songs)
     }),
     albumSong: (song?: MusicTrack): YtMusicSong => ({
         id: song?.videoId!,
@@ -127,6 +128,8 @@ export const getPlaylist = (browseId: string): Promise<YtMusicPlaylist | null> =
     request("browse").with({ browseId })
         .then(res =>
             scrape.playlist(res.data, browseId)
+        ).then(list =>
+            filter.playlists(list) ? list : null
         ).catch(
             () => null
         )
@@ -141,6 +144,8 @@ export const getAlbum = (browseId: string): Promise<YtMusicAlbum | null> => (
     request("browse").with({ browseId })
         .then(res =>
             scrape.album(res.data, browseId) ?? scrape.albumAsPlaylist(res.data, browseId)
+        ).then(list =>
+            filter.albums(list) ? list : null
         ).catch(
             () => null
         )

@@ -1,6 +1,6 @@
 import { retrieveSuggestions } from "../src";
 
-it("returns suggested playlists with all data correctly", () => (
+it("returns suggested playlists correctly", () => (
     retrieveSuggestions()
-        .then(suggestions => expect(suggestions).not.toBeNull())
+        .then(suggestions => expect(suggestions).not.toStrictEqual([]))
 ));

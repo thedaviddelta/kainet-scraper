@@ -1,5 +1,6 @@
 import request from "./utils/request";
 import * as parse from "./utils/parse";
+import * as filter from "./utils/filter";
 import {
     YtMusicSong,
     YtMusicVideo,
@@ -109,7 +110,7 @@ const scrape: Record<
         duration: parse.duration.fromText(parse.text.columns(data?.flexColumns, 1, -1)),
         durationText: parse.text.columns(data?.flexColumns, 1, -1),
         thumbnails: parse.thumbnails(data?.thumbnail?.musicThumbnailRenderer?.thumbnail),
-        views: parse.num.big(parse.text.columns(data?.flexColumns, 1, -3))
+        views: parse.num.big(parse.text.columns(data?.flexColumns, 1, -3))?.toString()
     }),
     albums: (data?: SearchAlbumData): YtMusicAlbum => ({
         id: parseId.albumOrPlaylist(data)!,
@@ -130,7 +131,7 @@ const scrape: Record<
         id: parse.id.browse(data)!,
         name: parse.text.columns(data?.flexColumns, 0, 0)!,
         thumbnails: parse.thumbnails(data?.thumbnail?.musicThumbnailRenderer?.thumbnail),
-        subCount: parse.num.big(parse.text.columns(data?.flexColumns, 1, 2))
+        subCount: parse.num.big(parse.text.columns(data?.flexColumns, 1, 2))?.toString()
     })
 };
 
@@ -167,15 +168,19 @@ export type SearchTypes = typeof SearchType[keyof typeof SearchType];
  * Retrieves a list of search results based on the queried type and the query text
  * @param type - The type of item to search, as listed in {@link SearchType}
  * @param query - The text to query for
- * @returns An array of of elements of the specified type, or null if something went wrong
+ * @returns An array of elements of the specified type
  */
-export const search = <T extends SearchTypes>(type: T, query: string) => (
+export const search = <T extends SearchTypes>(type: T, query: string): Promise<SearchModels[T][]> => (
     request("search").with({ params: searchParams[type], query })
         .then(res =>
-            parseSearch<SearchResults[T]>(res.data)?.map(
-                el => scrape[type](el) as SearchModels[T]
-            ) ?? null
+            parseSearch<SearchResults[T]>(
+                res.data
+            )?.map(result =>
+                scrape[type](result) as SearchModels[T]
+            )?.filter(item =>
+                (filter[type] as (item: SearchModels[T]) => boolean)(item)
+            ) ?? []
         ).catch(
-            () => null
+            () => []
         )
 );
