@@ -1,4 +1,5 @@
 export interface YtMusicSong {
+    type: "song",
     id: string,
     title: string,
     artist?: string,
@@ -9,6 +10,7 @@ export interface YtMusicSong {
 }
 
 export interface YtMusicVideo {
+    type: "video",
     id: string,
     title: string,
     artist?: string,
@@ -19,27 +21,34 @@ export interface YtMusicVideo {
 }
 
 export interface YtMusicAlbum {
+    type: "album",
     id: string,
     browseId: string,
     title: string,
     artist?: string,
     thumbnails: string[],
     year?: string,
-    songs?: YtMusicSong[]
+    tracks?: YtMusicSong[]
 }
 
 export interface YtMusicPlaylist {
+    type: "playlist",
     id: string,
     browseId: string,
     title: string,
     thumbnails: string[],
-    songCount?: number,
-    songs?: (YtMusicSong & YtMusicVideo)[]
+    trackCount?: number,
+    tracks?: YtMusicTrack[]
 }
 
 export interface YtMusicArtist {
+    type: "artist",
     id: string,
     name: string,
     thumbnails: string[],
     subCount?: string // bigint is not serializable
 }
+
+export type YtMusicElement = YtMusicSong | YtMusicVideo | YtMusicAlbum | YtMusicPlaylist | YtMusicArtist;
+
+export type YtMusicTrack = YtMusicSong | YtMusicVideo;

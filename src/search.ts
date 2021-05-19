@@ -1,6 +1,5 @@
 import request from "./utils/request";
 import * as parse from "./utils/parse";
-import * as filter from "./utils/filter";
 import {
     YtMusicSong,
     YtMusicVideo,
@@ -95,15 +94,17 @@ const scrape: Record<
     (data?: SearchResults[SearchTypes]) => SearchModels[SearchTypes]
 > = {
     songs: (data?: SearchSongData): YtMusicSong => ({
+        type: "song",
         id: parseId.songOrVideo(data)!,
         title: parse.text.columns(data?.flexColumns, 0, 0)!,
         artist: parse.text.columns(data?.flexColumns, 1, 0),
         album: parse.text.columns(data?.flexColumns, 1, -3),
         duration: parse.duration.fromText(parse.text.columns(data?.flexColumns, 1, -1)),
         durationText: parse.text.columns(data?.flexColumns, 1, -1),
-        thumbnails: parse.thumbnails(data?.thumbnail?.musicThumbnailRenderer?.thumbnail),
+        thumbnails: parse.thumbnails(data?.thumbnail?.musicThumbnailRenderer?.thumbnail)
     }),
     videos: (data?: SearchVideoData): YtMusicVideo => ({
+        type: "video",
         id: parseId.songOrVideo(data)!,
         title: parse.text.columns(data?.flexColumns, 0, 0)!,
         artist: parse.text.columns(data?.flexColumns, 1, 0),
@@ -113,21 +114,24 @@ const scrape: Record<
         views: parse.num.big(parse.text.columns(data?.flexColumns, 1, -3))?.toString()
     }),
     albums: (data?: SearchAlbumData): YtMusicAlbum => ({
+        type: "album",
         id: parseId.albumOrPlaylist(data)!,
         browseId: parse.id.browse(data)!,
         title: parse.text.columns(data?.flexColumns, 0, 0)!,
         artist: parse.text.columns(data?.flexColumns, 1, 2),
         thumbnails: parse.thumbnails(data?.thumbnail?.musicThumbnailRenderer?.thumbnail),
-        year: parse.text.columns(data?.flexColumns, 1, -1),
+        year: parse.text.columns(data?.flexColumns, 1, -1)
     }),
     playlists: (data?: SearchPlaylistData): YtMusicPlaylist => ({
+        type: "playlist",
         id: parseId.albumOrPlaylist(data)!,
         browseId: parse.id.browse(data)!,
         title: parse.text.columns(data?.flexColumns, 0, 0)!,
         thumbnails: parse.thumbnails(data?.thumbnail?.musicThumbnailRenderer?.thumbnail),
-        songCount: parse.num.simple(parse.text.columns(data?.flexColumns, 1, 2)),
+        trackCount: parse.num.simple(parse.text.columns(data?.flexColumns, 1, 2))
     }),
     artists: (data?: SearchArtistData): YtMusicArtist => ({
+        type: "artist",
         id: parse.id.browse(data)!,
         name: parse.text.columns(data?.flexColumns, 0, 0)!,
         thumbnails: parse.thumbnails(data?.thumbnail?.musicThumbnailRenderer?.thumbnail),
@@ -177,8 +181,10 @@ export const search = <T extends SearchTypes>(type: T, query: string): Promise<S
                 res.data
             )?.map(result =>
                 scrape[type](result) as SearchModels[T]
-            )?.filter(item =>
-                (filter[type] as (item: SearchModels[T]) => boolean)(item)
+            )?.filter(
+                parse.filter
+            )?.map(
+                parse.undefinedFields
             ) ?? []
         ).catch(
             () => []

@@ -1,6 +1,6 @@
 import { search, SearchType } from "../src";
 // @ts-ignore
-import { expectFromQueries, expectFromWrong } from "./testUtils";
+import { expectFromQueries, expectFromWrong, expectNoUndefined } from "./testUtils";
 
 const queries = [
     "queen",
@@ -9,9 +9,10 @@ const queries = [
 ];
 
 const expectFromType = (type: typeof SearchType[keyof typeof SearchType]): Promise<void> => (
-    expectFromQueries(queries, text => search(type, text), result => (
-        expect(result).not.toStrictEqual([])
-    ))
+    expectFromQueries(queries, text => search(type, text), result => {
+        expect(result).not.toStrictEqual([]);
+        result.forEach(item => expectNoUndefined(item));
+    })
 );
 
 const expectWrongFromType = (type: typeof SearchType[keyof typeof SearchType]): Promise<void> => (

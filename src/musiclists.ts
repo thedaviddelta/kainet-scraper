@@ -1,11 +1,10 @@
 import request from "./utils/request";
 import * as parse from "./utils/parse";
-import * as filter from "./utils/filter";
 import {
     YtMusicAlbum,
     YtMusicPlaylist,
     YtMusicSong,
-    YtMusicVideo
+    YtMusicTrack
 } from "./utils/interfaces";
 import {
     MusicResponsiveListItemRenderer,
@@ -51,10 +50,10 @@ type AlbumData = {
 };
 
 const parsePlaylist = {
-    songs: (data?: PlaylistData) => {
+    tracks: (data?: PlaylistData) => {
         const content = data?.contents?.singleColumnBrowseResultsRenderer?.tabs?.[0]?.tabRenderer?.content?.sectionListRenderer?.contents?.[0];
         const renderer = content?.musicPlaylistShelfRenderer ?? content?.musicShelfRenderer;
-        return renderer?.contents?.map(el => scrape.playlistSong(el?.musicResponsiveListItemRenderer))?.filter(Boolean) ?? [];
+        return renderer?.contents?.map(el => scrape.playlistTrack(el?.musicResponsiveListItemRenderer))?.filter(Boolean) ?? [];
     },
     id: (header?: Header) => (
         header?.musicDetailHeaderRenderer?.menu?.menuRenderer?.items?.[0]?.menuNavigationItemRenderer?.navigationEndpoint?.watchPlaylistEndpoint?.playlistId
@@ -65,21 +64,25 @@ const parseAlbum = {
     info: (data?: AlbumData) => (
         data?.frameworkUpdates?.entityBatchUpdate?.mutations?.find(el => el?.payload?.musicAlbumRelease)?.payload?.musicAlbumRelease
     ),
-    songs: (data?: AlbumData) => (
-        data?.frameworkUpdates?.entityBatchUpdate?.mutations?.map(el => el?.payload?.musicTrack)?.filter(Boolean)?.map(scrape.albumSong) ?? []
+    tracks: (data?: AlbumData) => (
+        data?.frameworkUpdates?.entityBatchUpdate?.mutations?.map(el => el?.payload?.musicTrack)?.filter(Boolean)?.map(scrape.albumTrack) ?? []
     )
 };
 
 const scrape = {
     playlist: (data: PlaylistData | undefined, browseId: string): YtMusicPlaylist => ({
+        type: "playlist",
         id: parsePlaylist.id(data?.header)!,
         browseId,
         title: parse.text.header(data?.header, 0)!,
         thumbnails: parse.thumbnails(data?.header?.musicDetailHeaderRenderer?.thumbnail?.croppedSquareThumbnailRenderer?.thumbnail),
-        songCount: parse.num.simple(parse.text.header(data?.header, 0, "secondSubtitle")),
-        songs: parsePlaylist.songs(data).filter(filter.songs)
+        trackCount: parse.num.simple(parse.text.header(data?.header, 0, "secondSubtitle")),
+        tracks: parsePlaylist.tracks(data).filter(parse.filter).map(parse.undefinedFields)
     }),
-    playlistSong: (song?: MusicResponsiveListItemRenderer): YtMusicSong & YtMusicVideo => ({
+    playlistTrack: (song?: MusicResponsiveListItemRenderer): YtMusicTrack => ({
+        type: parse.text.columns(song?.flexColumns, 2, 0)
+            ? "song"
+            : "video",
         id: song?.flexColumns?.[0]?.musicResponsiveListItemFlexColumnRenderer?.text?.runs?.[0]?.navigationEndpoint?.watchEndpoint?.videoId!,
         title: parse.text.columns(song?.flexColumns, 0, 0)!,
         artist: parse.text.columns(song?.flexColumns, 1, 0),
@@ -91,25 +94,30 @@ const scrape = {
     album: (data: AlbumData | undefined, browseId: string): YtMusicAlbum | undefined => {
         const info = parseAlbum.info(data);
         return info && {
+            type: "album",
             id: info.audioPlaylistId!,
             browseId,
             title: info.title!,
             thumbnails: parse.thumbnails(info.thumbnailDetails),
             artist: info.artistDisplayName,
             year: info.releaseDate?.year?.toString(),
-            songs: parseAlbum.songs(data).filter(filter.songs)
+            tracks: parseAlbum.tracks(data).filter(parse.filter).map(parse.undefinedFields)
         };
     },
     albumAsPlaylist: (data: PlaylistData | undefined, browseId: string): YtMusicAlbum => ({
+        type: "album",
         id: parsePlaylist.id(data?.header)!,
         browseId,
         title: parse.text.header(data?.header, 0)!,
         thumbnails: parse.thumbnails(data?.header?.musicDetailHeaderRenderer?.thumbnail?.croppedSquareThumbnailRenderer?.thumbnail),
         artist: parse.text.header(data?.header, 2, "subtitle"),
         year: parse.text.header(data?.header, -1, "subtitle"),
-        songs: parsePlaylist.songs(data).filter(filter.songs)
+        tracks: parsePlaylist.tracks(data).filter(parse.filter).map(track =>
+            (track.type = "song") && parse.undefinedFields(track) as YtMusicSong
+        )
     }),
-    albumSong: (song?: MusicTrack): YtMusicSong => ({
+    albumTrack: (song?: MusicTrack): YtMusicSong => ({
+        type: "song",
         id: song?.videoId!,
         title: song?.title!,
         artist: song?.artistNames,
@@ -129,7 +137,9 @@ export const getPlaylist = (browseId: string): Promise<YtMusicPlaylist | null> =
         .then(res =>
             scrape.playlist(res.data, browseId)
         ).then(list =>
-            filter.playlists(list) ? list : null
+            parse.filter(list)
+                ? parse.undefinedFields(list)
+                : null
         ).catch(
             () => null
         )
@@ -145,7 +155,9 @@ export const getAlbum = (browseId: string): Promise<YtMusicAlbum | null> => (
         .then(res =>
             scrape.album(res.data, browseId) ?? scrape.albumAsPlaylist(res.data, browseId)
         ).then(list =>
-            filter.albums(list) ? list : null
+            parse.filter(list)
+                ? parse.undefinedFields(list)
+                : null
         ).catch(
             () => null
         )

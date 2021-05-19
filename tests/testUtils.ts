@@ -16,3 +16,11 @@ export const expectFromWrong = async (
     callback("ad463b3c3298f77dd6d21c95020feb45baf98d7a")
         .then(result => expect(result).toStrictEqual(errValue))
 );
+
+export const expectNoUndefined = (
+    obj: object
+): void => (
+    Object.values(obj).forEach(value =>
+        expect(value).not.toBeUndefined()
+    )
+);

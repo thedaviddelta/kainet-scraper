@@ -1,6 +1,5 @@
 import request from "./utils/request";
 import * as parse from "./utils/parse";
-import * as filter from "./utils/filter";
 import { YtMusicPlaylist } from "./utils/interfaces";
 import { MusicTwoRowItemRenderer } from "./utils/types";
 
@@ -32,6 +31,7 @@ const parseSuggestions = (data?: SuggestionsData) => (
 );
 
 const scrapePlaylist = (item?: { musicTwoRowItemRenderer?: MusicTwoRowItemRenderer }): YtMusicPlaylist => ({
+    type: "playlist",
     id: item?.musicTwoRowItemRenderer?.menu?.menuRenderer?.items?.[4]?.toggleMenuServiceItemRenderer?.toggledServiceEndpoint?.likeEndpoint?.target?.playlistId!,
     browseId: parse.id.browse(item?.musicTwoRowItemRenderer)!,
     title: item?.musicTwoRowItemRenderer?.title?.runs?.[0]?.text!,
@@ -48,7 +48,9 @@ export const retrieveSuggestions = (): Promise<YtMusicPlaylist[]> => (
             parseSuggestions(res.data)?.flatMap(row => (
                 row?.map(scrapePlaylist)
             ))?.filter((list): list is YtMusicPlaylist =>
-                !!list && filter.playlists(list)
+                !!list && parse.filter(list)
+            )?.map(
+                parse.undefinedFields
             ) ?? []
         ).catch(
             () => []

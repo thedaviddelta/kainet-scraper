@@ -1,3 +1,4 @@
+import { YtMusicElement } from "./interfaces";
 import {
     Columns,
     NavigationEndpoint,
@@ -34,16 +35,26 @@ export const duration = {
         return +mins * 60 + +secs;
     },
     toText: (secs?: number) => {
-        if (!secs || secs < 0)
+        if (!secs && secs !== 0 || secs < 0)
             return undefined;
         const hours = Math.floor(secs / 3600);
-        const hoursRest = secs % 3600;
+        const hoursRest = Math.floor(secs % 3600);
         const mins = Math.floor(hoursRest / 60);
-        const minsRest = hoursRest % 60;
+        const minsRest = Math.floor(hoursRest % 60);
         return [hours || -1, mins, minsRest]
             .filter(el => el >= 0)
             .map(el => el.toString().padStart(3 - el.toString().length, "0"))
             .join(":");
+    },
+    toDetail: (secs?: number) => {
+        if (!secs && secs !== 0 || secs < 0)
+            return undefined;
+        const hours = Math.floor(secs / 3600);
+        const hoursRest = Math.floor(secs % 3600);
+        const mins = Math.floor(hoursRest / 60);
+        return hours > 0
+            ? `${hours} hour${hours !== 1 ? "s" : ""} & ${mins} minute${mins !== 1 ? "s" : ""}`
+            : `${mins} minute${mins !== 1 ? "s" : ""}`;
     }
 };
 
@@ -74,4 +85,24 @@ export const id = {
     browse: <T extends { navigationEndpoint?: NavigationEndpoint }>(data?: T) => (
         data?.navigationEndpoint?.browseEndpoint?.browseId
     )
-}
+};
+
+export const undefinedFields = <T extends object>(obj: T): T => (
+    Object.entries(obj).reduce((acc, [key, value]) => (
+        value === undefined ? acc : { ...acc, [key]: value }
+    ), {}) as T
+);
+
+export const filter = (item: YtMusicElement) => {
+    if (item.type === "song")
+        return !!item.id && !!item.title;
+    if (item.type === "video")
+        return !!item.id && !!item.title;
+    if (item.type === "album")
+        return !!item.id && !!item.browseId && !!item.title;
+    if (item.type === "playlist")
+        return !!item.id && !!item.browseId && !!item.title;
+    if (item.type === "artist")
+        return !!item.id && !!item.name;
+    return false;
+};

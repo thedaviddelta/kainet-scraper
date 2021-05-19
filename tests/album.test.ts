@@ -1,6 +1,6 @@
 import { getAlbum } from "../src";
 // @ts-ignore
-import { expectFromQueries, expectFromWrong } from "./testUtils";
+import { expectFromQueries, expectFromWrong, expectNoUndefined } from "./testUtils";
 
 const queries = [
     "MPREb_6MwY5ApCXas",
@@ -11,7 +11,9 @@ const queries = [
 it("returns album item with a songs array correctly", () => (
     expectFromQueries(queries, getAlbum, album => {
         expect(album).not.toBeNull();
-        expect(album?.songs).not.toStrictEqual([]);
+        expect(album?.tracks).not.toStrictEqual([]);
+        album && expectNoUndefined(album);
+        album?.tracks?.forEach(track => expectNoUndefined(track));
     })
 ));
 

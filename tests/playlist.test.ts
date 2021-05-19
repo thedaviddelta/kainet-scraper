@@ -1,6 +1,6 @@
 import { getPlaylist } from "../src";
 // @ts-ignore
-import { expectFromQueries, expectFromWrong } from "./testUtils";
+import { expectFromQueries, expectFromWrong, expectNoUndefined } from "./testUtils";
 
 const queries = [
     "VLRDCLAK5uy_lePvUIRtka0fZSLEEjKByNMYbxfyr7rGM",
@@ -11,7 +11,9 @@ const queries = [
 it("returns playlist item with a songs array correctly", () => (
     expectFromQueries(queries, getPlaylist, playlist => {
         expect(playlist).not.toBeNull();
-        expect(playlist?.songs).not.toStrictEqual([]);
+        expect(playlist?.tracks).not.toStrictEqual([]);
+        playlist && expectNoUndefined(playlist);
+        playlist?.tracks?.forEach(track => expectNoUndefined(track));
     })
 ));
 
