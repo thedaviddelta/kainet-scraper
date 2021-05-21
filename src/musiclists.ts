@@ -134,15 +134,12 @@ const scrape = {
  */
 export const getPlaylist = (browseId: string): Promise<YtMusicPlaylist | null> => (
     request("browse").with({ browseId })
-        .then(res =>
-            scrape.playlist(res.data, browseId)
-        ).then(list =>
-            parse.filter(list)
+        .doing(res => {
+            const list = scrape.playlist(res.data, browseId);
+            return parse.filter(list)
                 ? parse.undefinedFields(list)
-                : null
-        ).catch(
-            () => null
-        )
+                : null;
+        }, null)
 );
 
 /**
@@ -152,13 +149,10 @@ export const getPlaylist = (browseId: string): Promise<YtMusicPlaylist | null> =
  */
 export const getAlbum = (browseId: string): Promise<YtMusicAlbum | null> => (
     request("browse").with({ browseId })
-        .then(res =>
-            scrape.album(res.data, browseId) ?? scrape.albumAsPlaylist(res.data, browseId)
-        ).then(list =>
-            parse.filter(list)
+        .doing(res => {
+            const list = scrape.album(res.data, browseId) ?? scrape.albumAsPlaylist(res.data, browseId);
+            return parse.filter(list)
                 ? parse.undefinedFields(list)
-                : null
-        ).catch(
-            () => null
-        )
+                : null;
+        }, null)
 );

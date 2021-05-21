@@ -44,15 +44,13 @@ const scrapePlaylist = (item?: { musicTwoRowItemRenderer?: MusicTwoRowItemRender
  */
 export const retrieveSuggestions = (): Promise<YtMusicPlaylist[]> => (
     request("browse").with()
-        .then(res =>
+        .doing(res => (
             parseSuggestions(res.data)?.flatMap(row => (
                 row?.map(scrapePlaylist)
             ))?.filter((list): list is YtMusicPlaylist =>
                 !!list && parse.filter(list)
             )?.map(
                 parse.undefinedFields
-            ) ?? []
-        ).catch(
-            () => []
-        )
+            )
+        ), [])
 );

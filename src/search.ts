@@ -176,7 +176,7 @@ export type SearchTypes = typeof SearchType[keyof typeof SearchType];
  */
 export const search = <T extends SearchTypes>(type: T, query: string): Promise<SearchModels[T][]> => (
     request("search").with({ params: searchParams[type], query })
-        .then(res =>
+        .doing(res => (
             parseSearch<SearchResults[T]>(
                 res.data
             )?.map(result =>
@@ -185,8 +185,6 @@ export const search = <T extends SearchTypes>(type: T, query: string): Promise<S
                 parse.filter
             )?.map(
                 parse.undefinedFields
-            ) ?? []
-        ).catch(
-            () => []
-        )
+            )
+        ), [])
 );
