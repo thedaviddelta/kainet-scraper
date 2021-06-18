@@ -56,7 +56,7 @@ type SearchPlaylistData = {
     flexColumns?: Columns<"Flex">,
     thumbnail?: ThumbnailSearch,
     menu?: MenuSearch,
-    overlay?: Overlay
+    overlay?: Overlay,
     navigationEndpoint?: NavigationEndpoint
 };
 
@@ -64,7 +64,7 @@ type SearchAlbumData = {
     flexColumns?: Columns<"Flex">,
     thumbnail?: ThumbnailSearch,
     menu?: MenuSearch,
-    overlay?: Overlay
+    overlay?: Overlay,
     navigationEndpoint?: NavigationEndpoint
 };
 

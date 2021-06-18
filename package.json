@@ -1,6 +1,6 @@
 {
   "name": "kainet-scraper",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "description": "YouTube Music scraper for Kainet Music",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -29,7 +29,8 @@
     "extractor"
   ],
   "files": [
-    "dist/**/*"
+    "dist/**/*",
+    "img/logo.svg"
   ],
   "devDependencies": {
     "@types/jest": "^26.0.22",
