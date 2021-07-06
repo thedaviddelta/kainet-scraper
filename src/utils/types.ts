@@ -38,29 +38,19 @@ export type PlaylistItemData = {
     videoId?: string
 };
 
-export type MenuCommon = {
-    toggleMenuServiceItemRenderer?: {
-        toggledServiceEndpoint?: {
-            likeEndpoint?: {
-                target?: {
-                    playlistId?: string
-                }
-            }
-        }
-    }
-};
-
 export type MenuSearch = {
     menuRenderer?: {
         items?: {
-            menuNavigationItemRenderer?: MenuCommon
+            toggleMenuServiceItemRenderer?: {
+                toggledServiceEndpoint?: {
+                    likeEndpoint?: {
+                        target?: {
+                            playlistId?: string
+                        }
+                    }
+                }
+            }
         }[]
-    }
-};
-
-export type MenuSuggestions = {
-    menuRenderer?: {
-        items?: MenuCommon[]
     }
 };
 
@@ -100,7 +90,7 @@ export type NavigationEndpoint = {
 
 export type MusicTwoRowItemRenderer ={
     title?: Title,
-    menu?: MenuSuggestions,
+    menu?: MenuSearch,
     thumbnailRenderer?: ThumbnailSearch,
     navigationEndpoint?: NavigationEndpoint
 };

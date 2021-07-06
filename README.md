@@ -8,7 +8,7 @@
         <a href="https://npmjs.com/package/kainet-scraper">
             <img alt="NPM Version" src="https://img.shields.io/npm/v/kainet-scraper">
         </a>
-        <img alt="Commits since latest release" src="https://img.shields.io/github/commits-since/TheDavidDelta/kainet-scraper/v1.2.2?color=20B2AA">
+        <img alt="Commits since latest release" src="https://img.shields.io/github/commits-since/TheDavidDelta/kainet-scraper/v1.2.3?color=20B2AA">
         <a href="./LICENSE">
             <img src="https://img.shields.io/github/license/TheDavidDelta/kainet-scraper" alt="License">
         </a>
