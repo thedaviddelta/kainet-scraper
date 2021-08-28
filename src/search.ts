@@ -18,12 +18,20 @@ import {
 
 type SearchData<T extends SearchResultData> = {
     contents?: {
-        sectionListRenderer?: {
-            contents?: {
-                musicShelfRenderer?: {
-                    contents?: {
-                        musicResponsiveListItemRenderer: T
-                    }[]
+        tabbedSearchResultsRenderer?: {
+            tabs?: {
+                tabRenderer?: {
+                    content: {
+                        sectionListRenderer: {
+                            contents?: {
+                                musicShelfRenderer?: {
+                                    contents?: {
+                                        musicResponsiveListItemRenderer: T
+                                    }[]
+                                }
+                            }[]
+                        }
+                    }
                 }
             }[]
         }
@@ -75,7 +83,7 @@ type SearchArtistData = {
 };
 
 const parseSearch = <T extends SearchResultData>(data: SearchData<T>) => (
-    data.contents?.sectionListRenderer?.contents?.[0]?.musicShelfRenderer?.contents?.map(el => el?.musicResponsiveListItemRenderer)
+    data?.contents?.tabbedSearchResultsRenderer?.tabs?.[0]?.tabRenderer?.content?.sectionListRenderer?.contents?.[0]?.musicShelfRenderer?.contents?.map(el => el?.musicResponsiveListItemRenderer)
 );
 
 const parseId = {
